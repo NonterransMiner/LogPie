@@ -1,9 +1,17 @@
 # encoding=utf-8
+"""
+This is the LogPie.parser.pattern.log4j module.
+This module provides all the implementations of functions and classes
+which are designed to handle the Pattern in Log4j's configurations.
+"""
+import datetime
 from .pattern import ParserStatus
 from utils import strutils
 
 ROUTER = dict()
 DEFAULT_DATE_PATTERN = ''
+
+################ Functions to complete the pattern parser ################
 
 
 def read(current_char: str, status: ParserStatus):
@@ -67,16 +75,30 @@ def read_present(current_char: str, status: ParserStatus):
                           .format(current_char))
 
 
+################ Classes to handle the directives ################
+
+
 class Log4jDirective:
+    # None for N/A and a single-character for directive which this class
+    # handles
     DIRECTIVE = None
-    NEED_PROCESS = False
+    # Whether this classes needs to call build method to generate a custom
+    # object
+    NEED_BUILD = False
 
     @classmethod
     def regexp(cls, prefix: str, suffix: str):
+        """
+        Generate a regexp to capture this segment from the log line.
+        """
         pass
 
     @classmethod
-    def build(cls, prefix: str, suffix: str):
+    def build(cls, segment: str, format_str: str):
+        """
+        Build a custom object if the builtins cannot describe this segment
+        elegantly.
+        """
         pass
 
 
@@ -87,7 +109,7 @@ class Log4jDate(Log4jDirective):
     """
 
     DIRECTIVE = 'd'
-    NEED_PROCESS = True
+    NEED_BUILD = True
 
     DATE_DIRECTIVES = {
         'y': ('%Y', '\d'),
@@ -168,6 +190,10 @@ class Log4jDate(Log4jDirective):
             re_pieces.append("{{{}}}".format(last_directive_count))
         return strutils.connect(format_pieces), strutils.connect(re_pieces)
 
+    @classmethod
+    def build(cls, segment: str, format_str: str):
+        return datetime.datetime.strptime(segment, format_str)
+
 
 class Log4jLoggerNamespace(Log4jDirective):
     DIRECTIVE = 'c'
@@ -240,8 +266,9 @@ class Log4jNDC(Log4jDirective):
 class Log4jMDC(Log4jDirective):
     DIRECTIVE = 'X'
 
-# ############### MAKE ROUTER ################
+################ MAKE ROUTER ###############
 import sys
+
 log4j = sys.modules[__name__]
 for key in dir(log4j):
     item = getattr(log4j, key, None)
