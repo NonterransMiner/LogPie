@@ -1,10 +1,11 @@
 # encoding=utf-8
 """
-A collection of assistant functions to develop & build LogPie.
+A collection of assistant classes, functions and constants
+to develop & build LogPie.
 """
 
 
-class strutils:
+class StrUtils:
     @classmethod
     def join(cls, comma: str, iterable):
         """
