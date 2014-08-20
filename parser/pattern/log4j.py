@@ -5,20 +5,23 @@ This module provides all the implementations of functions and classes
 which are designed to handle the Pattern in Log4j's configurations.
 """
 import datetime
+import re
+
 from .pattern import ParserStatus
-from utils import strutils
+from utils import StrUtils
+
 
 ROUTER = dict()
 DEFAULT_DATE_PATTERN = ''
 
-################ Functions to complete the pattern parser ################
+# ############### Functions to complete the pattern parser ################
 
 
 def read(current_char: str, status: ParserStatus):
     if current_char == '%':
         return status.pop_string(), read_present
     else:
-        status.push_char(current_char)
+        status.push_char(re.escape(current_char))
         return None, read
 
 
@@ -75,7 +78,7 @@ def read_present(current_char: str, status: ParserStatus):
                           .format(current_char))
 
 
-################ Classes to handle the directives ################
+# ############### Classes to handle the directives ################
 
 
 class Log4jDirective:
@@ -188,7 +191,7 @@ class Log4jDate(Log4jDirective):
                 re_pieces.append(c)
         if last_directive in cls.DATE_DIRECTIVES:
             re_pieces.append("{{{}}}".format(last_directive_count))
-        return strutils.connect(format_pieces), strutils.connect(re_pieces)
+        return StrUtils.connect(format_pieces), StrUtils.connect(re_pieces)
 
     @classmethod
     def build(cls, segment: str, format_str: str):
@@ -266,7 +269,7 @@ class Log4jNDC(Log4jDirective):
 class Log4jMDC(Log4jDirective):
     DIRECTIVE = 'X'
 
-################ MAKE ROUTER ###############
+# ############### MAKE ROUTER ###############
 import sys
 
 log4j = sys.modules[__name__]
