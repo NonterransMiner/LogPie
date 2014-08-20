@@ -1,3 +1,8 @@
+# To ignore manual tests
+
+*_manual.py
+
+
 # Created by http://www.gitignore.io
 
 ### Python ###
@@ -110,7 +115,8 @@ Session.vim
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*
