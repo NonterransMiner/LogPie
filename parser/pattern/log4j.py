@@ -11,6 +11,9 @@ from .pattern import ParserStatus
 from utils import StrUtils
 
 
+DEFAULT_CONVERSION_PATTERN = "%m%n"
+TTCC_CONVERSION_PATTERN = "%r [%t] %p %c %x - %m%n"
+SIMPLE_CONVERSION_PATTERN = "%d [%t] %p %c - %m%n"
 ROUTER = dict()
 DEFAULT_DATE_PATTERN = ''
 
@@ -76,6 +79,16 @@ def read_present(current_char: str, status: ParserStatus):
     else:
         raise SyntaxError('LogPie cannot parse %{}'
                           .format(current_char))
+
+
+def clean(status: ParserStatus):
+    if status.string_buffer:
+        return status.pop_string()
+    if status.nearby_key:
+        prefix = status.pop_prefix()
+        key = status.pop_nearby_key()
+        suffix = status.pop_suffix()
+        return ROUTER[key].regexp(prefix, suffix)
 
 
 # ############### Classes to handle the directives ################
@@ -236,6 +249,10 @@ class Log4jCallerLineNumber(Log4jDirective):
 
 class Log4jMessage(Log4jDirective):
     DIRECTIVE = 'm'
+
+    @classmethod
+    def regexp(cls, prefix: str, suffix: str):
+        return r'(.*)'
 
 
 class Log4jCallerMethodName(Log4jDirective):

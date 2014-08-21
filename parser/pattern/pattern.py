@@ -1,11 +1,7 @@
-#encoding=utf-8
+# encoding=utf-8
 """
 从pattern中生成解析器
 """
-
-DEFAULT_CONVERSION_PATTERN = "%m%n"
-TTCC_CONVERSION_PATTERN = "%r [%t] %p %c %x - %m%n"
-SIMPLE_CONVERSION_PATTERN = "%d [%t] %p %c - %m%n"
 
 
 class ParserStatus(object):
@@ -47,7 +43,7 @@ class ParserStatus(object):
         return s
 
 
-def gen_pattern_parser(start_function: callable):
+def gen_pattern_parser(start_function: callable, cleanup_function: callable):
     def pattern_parser(pattern: str):
         status = ParserStatus()
         re_pieces = []
@@ -61,7 +57,9 @@ def gen_pattern_parser(start_function: callable):
             else:
                 raise TypeError('Unexpected type during parsing: {} as {}'
                                 .format(str(retval), type(retval)))
-        re_pieces.append(status.pop_string())
+        remaing = cleanup_function(status)
+        if remaing:
+            re_pieces.append(remaing)
         return ''.join(re_pieces)
-    # 装饰参数列
+
     return pattern_parser
