@@ -162,11 +162,12 @@ class Log4jDate(Log4jDirective):
         date_format, date_re = Log4jDate.parse_suffix(suffix)
         return '({})'.format(date_re)
 
+
     @classmethod
     def time_format(cls, prefix: str, suffix: str):
         if prefix:
             raise SyntaxError(
-                'Cannot parse %{}c{}: no prefixing options excepted'
+                'Cannot parse %{}d{{{}}}: no prefixing options excepted'
                 .format(prefix, suffix))
         if suffix in Log4jDate.BUILTIN:
             return Log4jDate.BUILTIN[suffix][0]
@@ -208,6 +209,10 @@ class Log4jDate(Log4jDirective):
         if last_directive in cls.DATE_DIRECTIVES:
             re_pieces.append("{{{}}}".format(last_directive_count))
         return StrUtils.connect(format_pieces), StrUtils.connect(re_pieces)
+
+    @classmethod
+    def additional_info(cls, prefix: str, suffix: str):
+        return Log4jDate.time_format(prefix, suffix)
 
     @classmethod
     def build(cls, segment: str, format_str: str):
