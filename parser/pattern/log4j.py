@@ -20,17 +20,17 @@ DEFAULT_DATE_PATTERN = ''
 # ############### Functions to complete the pattern parser ################
 
 
-def make_directive(prefix: str, key: str, suffix: str):
-    cls = ROUTER.get(key, None)
+def make_directive(prefix: str, directive: str, suffix: str):
+    cls = ROUTER.get(directive, None)
     if not cls:
         raise ValueError(
             'Pattern %{}{}{} does not exists or not implemented yet.'
-            .format(prefix, key, suffix))
+            .format(prefix, directive, suffix))
     else:
-        regexp_piece = cls.regexp(suffix, prefix)
+        regexp_piece = cls.regexp(prefix, suffix)
         if cls.NEED_BUILD:
             build_triad = (cls.KEY, cls,
-                           cls.additional_info(prefix, key, suffix))
+                           cls.additional_info(prefix, suffix))
         else:
             build_triad = (cls.KEY, cls, tuple())
     return regexp_piece, build_triad
@@ -48,10 +48,7 @@ def read_pending(current_char: str, status: ParserStatus):
     if current_char == '{':
         return None, read_braces
     else:
-        prefix = status.pop_prefix()
-        key = status.pop_nearby_key()
-        suffix = status.pop_suffix()
-        re_piece, build_triad = make_directive(prefix, key, suffix)
+        re_piece, build_triad = make_directive(*status.pop_3())
         retval, next_func = read(current_char, status)
         if isinstance(retval, str):
             return (re_piece + retval, build_triad), next_func
@@ -64,15 +61,7 @@ def read_pending(current_char: str, status: ParserStatus):
 
 def read_braces(current_char: str, status: ParserStatus):
     if current_char == '}':
-        prefix = status.pop_prefix()
-        key = status.pop_nearby_key()
-        suffix = status.pop_suffix()
-        re_piece = ROUTER[key].regexp(prefix, suffix)
-        if isinstance(re_piece, str):
-            return re_piece, read
-        else:
-            raise TypeError('Unexpected {} {}'
-                            .format(re_piece, type(re_piece)))
+        return make_directive(*status.pop_3()), read
     else:
         status.push_suffix(current_char)
         return None, read_braces
@@ -82,7 +71,7 @@ def read_present(current_char: str, status: ParserStatus):
     if current_char == '%':
         return '%', read
     elif current_char in ROUTER:
-        status.set_nearby_key(current_char)
+        status.set_nearby_directive(current_char)
         return None, read_pending
     elif current_char:
         status.push_prefix(current_char)
@@ -95,9 +84,7 @@ def clean(status: ParserStatus):
     if status.string_buffer:
         return status.pop_string()
     if status.nearby_key:
-        return make_directive(status.pop_prefix(),
-                                status.pop_nearby_key(),
-                                status.pop_suffix())
+        return make_directive(*status.pop_3())
 
 
 # ############### Classes to handle the directives ################
@@ -166,7 +153,7 @@ class Log4jDate(Log4jDirective):
     def regexp(cls, prefix: str, suffix: str):
         if prefix:
             raise SyntaxError(
-                'Cannot parse %{}c{}: no prefixing options excepted'
+                'Cannot parse %{}d{{{}}}: no prefixing options excepted'
                 .format(prefix, suffix))
         if suffix in Log4jDate.BUILTIN:
             return Log4jDate.BUILTIN[suffix][1]

@@ -11,10 +11,10 @@ class ParserStatus(object):
         self.suffix_buffer = []
         self.nearby_key = None
 
-    def set_nearby_key(self, key):
+    def set_nearby_directive(self, key):
         self.nearby_key = key
 
-    def pop_nearby_key(self):
+    def pop_nearby_directive(self):
         key, self.nearby_key = self.nearby_key, None
         return key
 
@@ -41,6 +41,12 @@ class ParserStatus(object):
         s = ''.join(self.suffix_buffer)
         self.suffix_buffer.clear()
         return s
+
+    def pop_3(self):
+        prefix = self.pop_prefix()
+        directive = self.pop_nearby_directive()
+        suffix = self.pop_suffix()
+        return prefix, directive, suffix
 
 
 def gen_pattern_parser(start_function: callable, cleanup_function: callable):
