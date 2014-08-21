@@ -47,11 +47,16 @@ def gen_pattern_parser(start_function: callable, cleanup_function: callable):
     def pattern_parser(pattern: str):
         status = ParserStatus()
         re_pieces = []
+        build_triads = []
         function = start_function
         for current_char in pattern:
             retval, function = function(current_char, status)
             if isinstance(retval, str):
                 re_pieces.append(retval)
+            elif isinstance(retval, tuple) and len(retval) == 2:
+                regexp_piece, build_triad = retval
+                re_pieces.append(regexp_piece)
+                build_triads.append(build_triad)
             elif retval is None:
                 continue
             else:
