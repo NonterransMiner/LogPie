@@ -7,7 +7,7 @@ which are designed to handle the Pattern in Log4j's configurations.
 import datetime
 import re
 
-from .pattern import ParserStatus
+from .common import ParserStatus, GeneralDirective, gen_pattern_parser
 from utils import StrUtils
 
 
@@ -88,39 +88,7 @@ def clean(status: ParserStatus):
 
 
 # ############### Classes to handle the directives ################
-
-
-class Log4jDirective:
-    # None for N/A and a single-character for directive which this class
-    # handles
-    DIRECTIVE = None
-    # Whether this classes needs to call build method to generate a custom
-    # object
-    NEED_BUILD = False
-    # The key for the output dict
-    KEY = 'LOG4J'
-
-    @classmethod
-    def regexp(cls, prefix: str, suffix: str):
-        """
-        Generate a regexp to capture this segment from the log line.
-        """
-        pass
-
-    @classmethod
-    def build(cls, segment: str, format_str: str):
-        """
-        Build a custom object if the builtins cannot describe this segment
-        elegantly.
-        """
-        pass
-
-    @classmethod
-    def additional_info(cls, prefix: str, suffix: str):
-        return tuple()
-
-
-class Log4jDate(Log4jDirective):
+class Log4jDate(GeneralDirective):
     """
     Handle %D in profiles.
     Here's a long way to go.
@@ -219,7 +187,7 @@ class Log4jDate(Log4jDirective):
         return datetime.datetime.strptime(segment, format_str)
 
 
-class Log4jLoggerNamespace(Log4jDirective):
+class Log4jLoggerNamespace(GeneralDirective):
     DIRECTIVE = 'c'
     KEY = 'logger.namespace'
 
@@ -228,7 +196,7 @@ class Log4jLoggerNamespace(Log4jDirective):
         return r"([.\w]+)"
 
 
-class Log4jLoggerClassName(Log4jDirective):
+class Log4jLoggerClassName(GeneralDirective):
     DIRECTIVE = 'C'
     KEY = 'logger.class'
 
@@ -237,7 +205,7 @@ class Log4jLoggerClassName(Log4jDirective):
         return r"([.\w]+)"
 
 
-class Log4jSourceFile(Log4jDirective):
+class Log4jSourceFile(GeneralDirective):
     DIRECTIVE = 'F'
     KEY = 'source.file'
 
@@ -246,7 +214,7 @@ class Log4jSourceFile(Log4jDirective):
         return r'(\w[\w.]+\.java)'
 
 
-class Log4jCallerPosition(Log4jDirective):
+class Log4jCallerPosition(GeneralDirective):
     DIRECTIVE = 'l'
     KEY = 'caller.position'
 
@@ -255,12 +223,12 @@ class Log4jCallerPosition(Log4jDirective):
         return r'(\d+)'
 
 
-class Log4jCallerLineNumber(Log4jDirective):
+class Log4jCallerLineNumber(GeneralDirective):
     DIRECTIVE = 'L'
     KEY = 'caller.lineno'
 
 
-class Log4jMessage(Log4jDirective):
+class Log4jMessage(GeneralDirective):
     DIRECTIVE = 'm'
     KEY = 'message'
 
@@ -269,12 +237,12 @@ class Log4jMessage(Log4jDirective):
         return r'(.*)'
 
 
-class Log4jCallerMethodName(Log4jDirective):
+class Log4jCallerMethodName(GeneralDirective):
     DIRECTIVE = 'M'
     KEY = 'caller.method'
 
 
-class Log4jLogLevel(Log4jDirective):
+class Log4jLogLevel(GeneralDirective):
     DIRECTIVE = 'p'
     KEY = 'level'
 
@@ -283,7 +251,7 @@ class Log4jLogLevel(Log4jDirective):
         return "(DEBUG|INFO|WARN|ERROR|FATAL)"
 
 
-class Log4jRuntimeMillisecond(Log4jDirective):
+class Log4jRuntimeMillisecond(GeneralDirective):
     DIRECTIVE = 'r'
     KEY = 'runtime'
 
@@ -292,25 +260,28 @@ class Log4jRuntimeMillisecond(Log4jDirective):
         return '(\d+)'
 
 
-class Log4jCallerThreadName(Log4jDirective):
+class Log4jCallerThreadName(GeneralDirective):
     DIRECTIVE = 't'
     KEY = 'caller.thread'
 
 
-class Log4jNDC(Log4jDirective):
+class Log4jNDC(GeneralDirective):
     DIRECTIVE = 'x'
     KEY = 'ndc'
 
 
-class Log4jMDC(Log4jDirective):
+class Log4jMDC(GeneralDirective):
     DIRECTIVE = 'X'
     KEY = 'mdc'
 
-# ############### MAKE ROUTER ###############
+################ MAKE ROUTER ###############
 import sys
 
 log4j = sys.modules[__name__]
 for key in dir(log4j):
     item = getattr(log4j, key, None)
-    if hasattr(item, "DIRECTIVE") and item is not Log4jDirective:
+    if hasattr(item, "DIRECTIVE") and item is not GeneralDirective:
         ROUTER[item.DIRECTIVE] = item
+
+############### MAKE PARSER ################
+parser = gen_pattern_parser(read, clean)

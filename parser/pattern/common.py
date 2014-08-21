@@ -49,6 +49,36 @@ class ParserStatus(object):
         return prefix, directive, suffix
 
 
+class GeneralDirective:
+    # None for N/A and a single-character for directive which this class
+    # handles
+    DIRECTIVE = None
+    # Whether this classes needs to call build method to generate a custom
+    # object
+    NEED_BUILD = False
+    # The key for the output dict
+    KEY = 'GENERAL'
+
+    @classmethod
+    def regexp(cls, prefix: str, suffix: str):
+        """
+        Generate a regexp to capture this segment from the log line.
+        """
+        pass
+
+    @classmethod
+    def build(cls, segment: str, format_str: str):
+        """
+        Build a custom object if the builtins cannot describe this segment
+        elegantly.
+        """
+        pass
+
+    @classmethod
+    def additional_info(cls, prefix: str, suffix: str):
+        return tuple()
+
+
 def gen_pattern_parser(start_function: callable, cleanup_function: callable):
     def pattern_parser(pattern: str):
         status = ParserStatus()
