@@ -20,6 +20,22 @@ DEFAULT_DATE_PATTERN = ''
 # ############### Functions to complete the pattern parser ################
 
 
+def make_directive(prefix: str, key: str, suffix: str):
+    cls = ROUTER.get(key, None)
+    if not cls:
+        raise ValueError(
+            'Pattern %{}{}{} does not exists or not implemented yet.'
+            .format(prefix, key, suffix))
+    else:
+        regexp_piece = cls.regexp(suffix, prefix)
+        if cls.NEED_BUILD:
+            build_triad = (cls.KEY, cls,
+                           cls.additional_info(prefix, key, suffix))
+        else:
+            build_triad = (cls.KEY, cls, tuple())
+    return regexp_piece, build_triad
+
+
 def read(current_char: str, status: ParserStatus):
     if current_char == '%':
         return status.pop_string(), read_present
@@ -35,18 +51,12 @@ def read_pending(current_char: str, status: ParserStatus):
         prefix = status.pop_prefix()
         key = status.pop_nearby_key()
         suffix = status.pop_suffix()
-        directive = ROUTER.get(key, None)
-        if issubclass(directive, Log4jDirective):
-            re_piece = directive.regexp(prefix, suffix)
-        else:
-            raise KeyError(
-                'Pattern %{}{}{} does not exists or not implemented yet.'
-                .format(prefix, key, suffix))
+        re_piece, build_triad = make_directive(prefix, key, suffix)
         retval, next_func = read(current_char, status)
         if isinstance(retval, str):
-            return re_piece + retval, next_func
+            return (re_piece + retval, build_triad), next_func
         if retval is None:
-            return re_piece, next_func
+            return (re_piece, build_triad), next_func
         else:
             raise TypeError('Unexpected {} {}'
                             .format(retval, type(retval)))
@@ -85,10 +95,9 @@ def clean(status: ParserStatus):
     if status.string_buffer:
         return status.pop_string()
     if status.nearby_key:
-        prefix = status.pop_prefix()
-        key = status.pop_nearby_key()
-        suffix = status.pop_suffix()
-        return ROUTER[key].regexp(prefix, suffix)
+        return make_directive(status.pop_prefix(),
+                                status.pop_nearby_key(),
+                                status.pop_suffix())
 
 
 # ############### Classes to handle the directives ################
@@ -101,6 +110,8 @@ class Log4jDirective:
     # Whether this classes needs to call build method to generate a custom
     # object
     NEED_BUILD = False
+    # The key for the output dict
+    KEY = 'LOG4J'
 
     @classmethod
     def regexp(cls, prefix: str, suffix: str):
@@ -117,6 +128,10 @@ class Log4jDirective:
         """
         pass
 
+    @classmethod
+    def additional_info(cls, prefix: str, suffix: str):
+        return tuple()
+
 
 class Log4jDate(Log4jDirective):
     """
@@ -126,6 +141,7 @@ class Log4jDate(Log4jDirective):
 
     DIRECTIVE = 'd'
     NEED_BUILD = True
+    KEY = 'date'
 
     DATE_DIRECTIVES = {
         'y': ('%Y', '\d'),
@@ -213,6 +229,7 @@ class Log4jDate(Log4jDirective):
 
 class Log4jLoggerNamespace(Log4jDirective):
     DIRECTIVE = 'c'
+    KEY = 'logger.namespace'
 
     @classmethod
     def regexp(cls, prefix: str, suffix: str):
@@ -221,6 +238,7 @@ class Log4jLoggerNamespace(Log4jDirective):
 
 class Log4jLoggerClassName(Log4jDirective):
     DIRECTIVE = 'C'
+    KEY = 'logger.class'
 
     @classmethod
     def regexp(cls, prefix: str, suffix: str):
@@ -229,6 +247,7 @@ class Log4jLoggerClassName(Log4jDirective):
 
 class Log4jSourceFile(Log4jDirective):
     DIRECTIVE = 'F'
+    KEY = 'source.file'
 
     @classmethod
     def regexp(cls, prefix: str, suffix: str):
@@ -237,6 +256,7 @@ class Log4jSourceFile(Log4jDirective):
 
 class Log4jCallerPosition(Log4jDirective):
     DIRECTIVE = 'l'
+    KEY = 'caller.position'
 
     @classmethod
     def regexp(cls, prefix: str, suffix: str):
@@ -245,10 +265,12 @@ class Log4jCallerPosition(Log4jDirective):
 
 class Log4jCallerLineNumber(Log4jDirective):
     DIRECTIVE = 'L'
+    KEY = 'caller.lineno'
 
 
 class Log4jMessage(Log4jDirective):
     DIRECTIVE = 'm'
+    KEY = 'message'
 
     @classmethod
     def regexp(cls, prefix: str, suffix: str):
@@ -257,10 +279,12 @@ class Log4jMessage(Log4jDirective):
 
 class Log4jCallerMethodName(Log4jDirective):
     DIRECTIVE = 'M'
+    KEY = 'caller.method'
 
 
 class Log4jLogLevel(Log4jDirective):
     DIRECTIVE = 'p'
+    KEY = 'level'
 
     @classmethod
     def regexp(cls, prefix: str, suffix: str):
@@ -269,6 +293,7 @@ class Log4jLogLevel(Log4jDirective):
 
 class Log4jRuntimeMillisecond(Log4jDirective):
     DIRECTIVE = 'r'
+    KEY = 'runtime'
 
     @classmethod
     def regexp(cls, prefix: str, suffix: str):
@@ -277,14 +302,17 @@ class Log4jRuntimeMillisecond(Log4jDirective):
 
 class Log4jCallerThreadName(Log4jDirective):
     DIRECTIVE = 't'
+    KEY = 'caller.thread'
 
 
 class Log4jNDC(Log4jDirective):
     DIRECTIVE = 'x'
+    KEY = 'ndc'
 
 
 class Log4jMDC(Log4jDirective):
     DIRECTIVE = 'X'
+    KEY = 'mdc'
 
 # ############### MAKE ROUTER ###############
 import sys
