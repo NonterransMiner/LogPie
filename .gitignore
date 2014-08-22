@@ -1,6 +1,7 @@
-# To ignore manual tests
+# To ignore manual tests and generated files
 
 *_manual.py
+reader/gen/*
 
 
 # Created by http://www.gitignore.io
