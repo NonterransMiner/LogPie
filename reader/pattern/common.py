@@ -1,6 +1,6 @@
 # encoding=utf-8
 """
-从pattern中生成解析器
+This module provides common components to construct the pattern parser
 """
 
 
@@ -72,7 +72,7 @@ class GeneralDirective:
         Build a custom object if the builtins cannot describe this segment
         properly.
         """
-        pass
+        return segment
 
     @classmethod
     def additional_info(cls, prefix: str, suffix: str) -> tuple:
@@ -114,3 +114,13 @@ def gen_pattern_parser(start_function: callable,
             return regexp, build_triads
 
     return pattern_parser
+
+
+def make_router(module_name: str, router):
+    import sys
+
+    module = sys.modules[module_name]
+    for key in dir(module):
+        item = getattr(module, key, None)
+        if hasattr(item, "DIRECTIVE") and item is not GeneralDirective:
+            router[item.DIRECTIVE] = item
