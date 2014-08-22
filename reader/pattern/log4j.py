@@ -7,7 +7,8 @@ which are designed to handle the Pattern in Log4j's configurations.
 import datetime
 import re
 
-from .common import ParserStatus, GeneralDirective, gen_pattern_parser
+from .common import ParserStatus, GeneralDirective
+from .common import gen_pattern_parser, make_router
 from .utils import StrUtils
 
 
@@ -274,14 +275,7 @@ class Log4jMDC(GeneralDirective):
     KEY = 'mdc'
 
 # ############### MAKE ROUTER ###############
-import sys
-
-log4j = sys.modules[__name__]
-for key in dir(log4j):
-    item = getattr(log4j, key, None)
-    if hasattr(item, "DIRECTIVE") and item is not GeneralDirective:
-        ROUTER[item.DIRECTIVE] = item
-
+make_router(__name__, ROUTER)
 # ############## MAKE PARSER ################
 parser = gen_pattern_parser(read, clean)
 test_parser = gen_pattern_parser(read, clean, regexp_only=True)
