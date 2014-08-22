@@ -42,6 +42,9 @@ class GeneralReader(object):
         self.iter_log_bind = None
         self.iter_lineno = 1
         self.iter_inited = False
+        self.next_line_inited = False
+        self.next_line_bind = None
+        self.next_line_cache = None
         # if lines is  a path to file, keep the path and set flag
         if isinstance(lines, str) and os.path.exists(lines):
             self.path = lines
@@ -56,20 +59,45 @@ class GeneralReader(object):
                 'nor a iterable object.'
                 .format(type(lines)))
 
-    def execute(self):
-        """
-        A wrapper to the parse method.
-        """
+    def _init_next_line(self):
         if self.using_file:
-            with open(self.path) as logfile:
-                try:
-                    self.parse_log(logfile)
-                except Exception as e:
-                    self.cache.clear()
-                    raise e
-
+            self.next_line_bind = open(self.path)
         else:
-            self.parse_log(self.lines)
+            self.next_line_bind = iter(self.lines)
+
+    def next_line(self) -> str:
+        """
+        Returns the next line to parse, or raise StopIteration
+        :raise StopIteration
+        """
+        if not self.next_line_inited:
+            self._init_next_line()
+            self.next_line_inited = True
+        head = None
+        meet_head = False
+        compiled_re = re.compile(self.regexp)
+        try:
+            if self.next_line_cache:
+                head = self.next_line_cache
+                meet_head = True
+                self.next_line_cache = None
+            for line in self.next_line_bind:
+                if compiled_re.match(line):
+                    if meet_head:
+                        self.next_line_cache = line
+                        break
+                    else:
+                        head = line
+                        meet_head = True
+                else:
+                    if meet_head:
+                        head += line
+        except IOError as io:
+            raise io
+        if head:
+            return head
+        else:
+            raise StopIteration
 
     def process_matches(self, matches):
         for match in matches:
@@ -82,14 +110,18 @@ class GeneralReader(object):
                     log_item[key] = segment
             self.cache.append(log_item)
 
-    def parse_log(self, log):
+    def readall(self):
         """
         The core reader of the general line-based reader.
         WARNING: This will use A LOT OF MEMORY.
         """
         lineno = 1
         compiled_re = re.compile(self.regexp)
-        for line in log:
+        while True:
+            try:
+                line = self.next_line()
+            except StopIteration:
+                break
             matches = compiled_re.findall(line)
             if matches:
                 self.process_matches(matches)
@@ -107,7 +139,7 @@ class GeneralReader(object):
         if self.using_file:
             self.iter_log_bind = open(self.path)
         else:
-            self.iter_log_bind = self.lines
+            self.iter_log_bind = iter(self.lines)
         self.compiled_re = re.compile(self.regexp)
 
     def __iter__(self):
