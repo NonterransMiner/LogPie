@@ -134,6 +134,7 @@ class GeneralReader(object):
                     .format(self.path if self.using_file else '<ITER>',
                             lineno, line, self.regexp))
             lineno += 1
+        return self.cache
 
     def _init_iter(self):
         if self.using_file:
