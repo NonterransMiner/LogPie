@@ -9,7 +9,8 @@ instant, this more likely a MODULE TO TEST THE READER.
 import datetime
 import re
 
-from .common import ParserStatus, GeneralDirective, gen_pattern_parser
+from .common import ParserStatus, GeneralDirective
+from .common import gen_pattern_parser, make_router
 
 DEFAULT_PATTERN = r''
 
@@ -77,11 +78,11 @@ class SystemdSource(GeneralDirective):
 
     @classmethod
     def regexp(cls, prefix: str, suffix: str) -> str:
-        return r'([\w\[\]]+)'
+        return r'([\.\-\w\[\]]+)'
 
     @classmethod
     def build(cls, segment: str, *args) -> {'pname': str, 'pid': int}:
-        match = re.match('(\w+)\[(\d+)\]', segment)
+        match = re.match('(\S+)\[(\d+)\]', segment)
         if match:
             pname, pid = match.groups()
             return {'pname': pname, 'pid': int(pid)}
@@ -98,15 +99,11 @@ class SystemdMessage(GeneralDirective):
     def regexp(cls, prefix: str, suffix: str) -> str:
         return r'(.*)'
 
+
 # ############### MAKE ROUTER ################
-import sys
 
-log4j = sys.modules[__name__]
-for key in dir(log4j):
-    item = getattr(log4j, key, None)
-    if hasattr(item, "DIRECTIVE") and item is not GeneralDirective:
-        ROUTER[item.DIRECTIVE] = item
 
+make_router(__name__, ROUTER)
 # ############## MAKE PARSER ################
 
 parser = gen_pattern_parser(read, clean)
