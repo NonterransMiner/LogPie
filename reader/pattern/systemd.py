@@ -1,8 +1,8 @@
 # encoding=utf-8
 
 """
-This is the LogPie.parser.pattern.systemd module.
-This module DOSE NOT PROVIDE SERIOUS TOOLS to build a systemd's log parser,
+This is the LogPie.reader.pattern.systemd module.
+This module DOSE NOT PROVIDE SERIOUS TOOLS to build a systemd's log reader,
 instant, this more likely a MODULE TO TEST THE READER.
 """
 
@@ -10,11 +10,10 @@ import datetime
 import re
 
 from .common import ParserStatus, GeneralDirective, gen_pattern_parser
-from utils import StrUtils
 
 DEFAULT_PATTERN = r''
 
-# ############### Functions to complete the pattern parser ################
+# ############### Functions to complete the pattern reader ################
 
 ROUTER = {}
 

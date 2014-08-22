@@ -21,7 +21,7 @@ class GeneralReader(object):
         Initialize an instance with correct #lines#.
         :param lines: A path to the log file, or an iterable object holding log.
         """
-        # override these fields to custom the behavior of parser
+        # override these fields to custom the behavior of reader
         # the regexp to capture segments in a single-line
         self.regexp = r''
         # a list of triads with a key, a class like Log4jDate
@@ -29,9 +29,9 @@ class GeneralReader(object):
         self.handlers = []
         # cache compiled re if using iterable accessing
         self.compiled_re = None
-        # parser behavior flags
+        # reader behavior flags
         self.using_file = False
-        # if set to True, parser will pass when some line cannot match the
+        # if set to True, reader will pass when some line cannot match the
         # given regexp
         self.tolerant = False
         # resources
@@ -81,7 +81,7 @@ class GeneralReader(object):
 
     def parse_log(self, log):
         """
-        The core parser of the general line-based parser.
+        The core reader of the general line-based reader.
         WARNING: This will use A LOT OF MEMORY.
         """
         lineno = 1
@@ -142,10 +142,3 @@ class GeneralReader(object):
                 self.file_bind.close()
         if self.iter_log_bind:
             self.iter_log_bind.close()
-
-
-
-
-
-
-

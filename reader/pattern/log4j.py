@@ -1,6 +1,6 @@
 # encoding=utf-8
 """
-This is the LogPie.parser.pattern.log4j module.
+This is the LogPie.reader.pattern.log4j module.
 This module provides all the implementations of functions and classes
 which are designed to handle the Pattern in Log4j's configurations.
 """
@@ -8,7 +8,7 @@ import datetime
 import re
 
 from .common import ParserStatus, GeneralDirective, gen_pattern_parser
-from utils import StrUtils
+from .utils import StrUtils
 
 
 DEFAULT_CONVERSION_PATTERN = "%m%n"
@@ -17,7 +17,7 @@ SIMPLE_CONVERSION_PATTERN = "%d [%t] %p %c - %m%n"
 ROUTER = dict()
 DEFAULT_DATE_PATTERN = ''
 
-# ############### Functions to complete the pattern parser ################
+# ############### Functions to complete the pattern reader ################
 
 
 def make_directive(prefix: str, directive: str, suffix: str):
