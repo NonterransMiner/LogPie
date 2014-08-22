@@ -118,7 +118,7 @@ class Log4jDate(GeneralDirective):
     }
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str):
+    def regexp(cls, prefix: str, suffix: str) -> str:
         if prefix:
             raise SyntaxError(
                 'Cannot parse %{}d{{{}}}: no prefixing options excepted'
@@ -130,9 +130,8 @@ class Log4jDate(GeneralDirective):
         date_format, date_re = Log4jDate.parse_suffix(suffix)
         return '({})'.format(date_re)
 
-
     @classmethod
-    def time_format(cls, prefix: str, suffix: str):
+    def time_format(cls, prefix: str, suffix: str) -> str:
         if prefix:
             raise SyntaxError(
                 'Cannot parse %{}d{{{}}}: no prefixing options excepted'
@@ -145,7 +144,7 @@ class Log4jDate(GeneralDirective):
         return date_format
 
     @classmethod
-    def parse_suffix(cls, suffix: str):
+    def parse_suffix(cls, suffix: str) -> (str, str):
         """
         Parse suffix of %d directives.
         Returns 2 values, the first is a format string for datetime.strptime
@@ -165,10 +164,10 @@ class Log4jDate(GeneralDirective):
                 else:
                     last_directive = c
                     last_directive_count = 1
-                ctrl, re = cls.DATE_DIRECTIVES[c]
+                ctrl, re_piece = cls.DATE_DIRECTIVES[c]
                 if ctrl:
                     format_pieces.append(ctrl)
-                    re_pieces.append(re)
+                    re_pieces.append(re_piece)
             else:
                 if re_pieces:
                     re_pieces.append("{{{}}}".format(last_directive_count))
@@ -179,11 +178,11 @@ class Log4jDate(GeneralDirective):
         return StrUtils.connect(format_pieces), StrUtils.connect(re_pieces)
 
     @classmethod
-    def additional_info(cls, prefix: str, suffix: str):
-        return Log4jDate.time_format(prefix, suffix)
+    def additional_info(cls, prefix: str, suffix: str) -> tuple:
+        return Log4jDate.time_format(prefix, suffix),
 
     @classmethod
-    def build(cls, segment: str, format_str: str):
+    def build(cls, segment: str, format_str: str) -> datetime.datetime:
         return datetime.datetime.strptime(segment, format_str)
 
 
@@ -192,7 +191,7 @@ class Log4jLoggerNamespace(GeneralDirective):
     KEY = 'logger.namespace'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str):
+    def regexp(cls, prefix: str, suffix: str) -> str:
         return r"([.\w]+)"
 
 
@@ -201,7 +200,7 @@ class Log4jLoggerClassName(GeneralDirective):
     KEY = 'logger.class'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str):
+    def regexp(cls, prefix: str, suffix: str) -> str:
         return r"([.\w]+)"
 
 
@@ -210,7 +209,7 @@ class Log4jSourceFile(GeneralDirective):
     KEY = 'source.file'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str):
+    def regexp(cls, prefix: str, suffix: str) -> str:
         return r'(\w[\w.]+\.java)'
 
 
@@ -219,7 +218,7 @@ class Log4jCallerPosition(GeneralDirective):
     KEY = 'caller.position'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str):
+    def regexp(cls, prefix: str, suffix: str) -> str:
         return r'(\d+)'
 
 
@@ -233,7 +232,7 @@ class Log4jMessage(GeneralDirective):
     KEY = 'message'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str):
+    def regexp(cls, prefix: str, suffix: str) -> str:
         return r'(.*)'
 
 
@@ -247,7 +246,7 @@ class Log4jLogLevel(GeneralDirective):
     KEY = 'level'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str):
+    def regexp(cls, prefix: str, suffix: str) -> str:
         return "(DEBUG|INFO|WARN|ERROR|FATAL)"
 
 
@@ -256,7 +255,7 @@ class Log4jRuntimeMillisecond(GeneralDirective):
     KEY = 'runtime'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str):
+    def regexp(cls, prefix: str, suffix: str) -> str:
         return '(\d+)'
 
 
@@ -274,7 +273,7 @@ class Log4jMDC(GeneralDirective):
     DIRECTIVE = 'X'
     KEY = 'mdc'
 
-################ MAKE ROUTER ###############
+# ############### MAKE ROUTER ###############
 import sys
 
 log4j = sys.modules[__name__]
@@ -283,5 +282,6 @@ for key in dir(log4j):
     if hasattr(item, "DIRECTIVE") and item is not GeneralDirective:
         ROUTER[item.DIRECTIVE] = item
 
-############### MAKE PARSER ################
+# ############## MAKE PARSER ################
 parser = gen_pattern_parser(read, clean)
+test_parser = gen_pattern_parser(read, clean, regexp_only=True)

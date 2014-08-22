@@ -60,26 +60,32 @@ class GeneralDirective:
     KEY = 'GENERAL'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str):
+    def regexp(cls, prefix: str, suffix: str) -> str:
         """
         Generate a regexp to capture this segment from the log line.
         """
         pass
 
     @classmethod
-    def build(cls, segment: str, format_str: str):
+    def build(cls, segment: str, *args):
         """
         Build a custom object if the builtins cannot describe this segment
-        elegantly.
+        properly.
         """
         pass
 
     @classmethod
-    def additional_info(cls, prefix: str, suffix: str):
+    def additional_info(cls, prefix: str, suffix: str) -> tuple:
+        """
+        Provide additional params to .build method in a tuple.
+        If have nothing to do, return an empty tuple.
+        """
         return tuple()
 
 
-def gen_pattern_parser(start_function: callable, cleanup_function: callable):
+def gen_pattern_parser(start_function: callable,
+                       cleanup_function: callable,
+                       regexp_only: bool=False):
     def pattern_parser(pattern: str):
         status = ParserStatus()
         re_pieces = []
@@ -98,9 +104,13 @@ def gen_pattern_parser(start_function: callable, cleanup_function: callable):
             else:
                 raise TypeError('Unexpected type during parsing: {} as {}'
                                 .format(str(retval), type(retval)))
-        remaing = cleanup_function(status)
-        if remaing:
-            re_pieces.append(remaing)
-        return ''.join(re_pieces)
+        remaining = cleanup_function(status)
+        if remaining:
+            re_pieces.append(remaining)
+        regexp = ''.join(re_pieces)
+        if regexp_only:
+            return regexp
+        else:
+            return regexp, build_triads
 
     return pattern_parser
