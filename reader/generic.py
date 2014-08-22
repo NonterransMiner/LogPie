@@ -26,7 +26,7 @@ class GeneralReader(object):
         self.regexp = r''
         # a list of triads with a key, a class like Log4jDate
         # and a tuple of addition information to call cls.build
-        self.handlers = []
+        self.triads = []
         # cache compiled re if using iterable accessing
         self.compiled_re = None
         # reader behavior flags
@@ -74,9 +74,12 @@ class GeneralReader(object):
     def process_matches(self, matches):
         for match in matches:
             log_item = dict()
-            mixup = zip(self.handlers, match)
+            mixup = zip(self.triads, match)
             for (key, cls, addition), segment in mixup:
-                log_item[key] = cls.build(segment, *addition)
+                if cls.NEED_BUILD:
+                    log_item[key] = cls.build(segment, *addition)
+                else:
+                    log_item[key] = segment
             self.cache.append(log_item)
 
     def parse_log(self, log):
@@ -142,3 +145,4 @@ class GeneralReader(object):
                 self.file_bind.close()
         if self.iter_log_bind:
             self.iter_log_bind.close()
+
