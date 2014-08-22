@@ -7,12 +7,21 @@ import sys, os, importlib, time, math, shutil
 import pattern
 
 READER_TPL = '''
-class {}LogReader(GeneralReader):
+class {s}LogReader(GeneralReader):
     def __init__(self, lines):
         super().__init__(lines)
-        self.regexp = {}
-        self.triads = {}
-    '''
+        self.regexp = {regexp}
+        self.triads = {triads}
+
+
+def main():
+    if len(sys.argv) == 2:
+        reader = {s}LogReader(sys.argv[1])
+        reader.readall()
+
+if __name__ == '__main__':
+    main()
+'''
 
 
 def gen_filepath(s: str, root: str):
@@ -29,17 +38,19 @@ def triad_to_string(triad, indent: int=3):
     return ts
 
 
-def write_code(s:str, src_path: str, regexp: str, triads: list):
-    src = ['\n']
-    # add imports
+def write_code(s: str, src_path: str, regexp: str, triads: list):
     class_names = map(lambda triad: triad[1].__name__, triads)
     readable_triad = "[\n{}]".format(', \n'.join(map(triad_to_string, triads)))
+    # add imports
+    src = ['\n', 'import sys\n']
     for name in class_names:
         src.append('from reader.pattern.{} import {}\n'.format(s, name))
     src.append('\n')
     # format the class
     src.append(READER_TPL
-               .format(s.title(), repr(regexp), readable_triad))
+               .format(s=s.title(),
+                       regexp=repr(regexp),
+                       triads=readable_triad))
     # print('\n'.join(src))
     with open(src_path, 'a') as src_file:
         src_file.writelines(src)
