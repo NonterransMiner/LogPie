@@ -16,7 +16,7 @@ To generate a reader:
 python3 reader/generate.py logsys pattern
 ```
 
-logsys should be `log4j` or `systemd`.
+where logsys should be `log4j` or `systemd`.
 
 for pattern, see offical docmentions & the log system's configurations.
 
@@ -26,6 +26,8 @@ for pattern, see offical docmentions & the log system's configurations.
 the generated file, like reader/gen/logsys_suffix.py
 
 suffix should be `time.time() % 10000`, if taken, then increase by 1 and try again.
+
+Use:
 
 ```shell
 python3 /reader/gen/logsys_suffix.py file
