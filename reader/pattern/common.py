@@ -104,9 +104,11 @@ def gen_pattern_parser(start_function: callable,
             else:
                 raise TypeError('Unexpected type during parsing: {} as {}'
                                 .format(str(retval), type(retval)))
-        remaining = cleanup_function(status)
-        if remaining:
-            re_pieces.append(remaining)
+        remaining_reg, remaining_tri = cleanup_function(status)
+        if remaining_reg:
+            re_pieces.append(remaining_reg)
+        if remaining_tri:
+            build_triads.append(remaining_tri)
         regexp = ''.join(re_pieces)
         if regexp_only:
             return regexp
