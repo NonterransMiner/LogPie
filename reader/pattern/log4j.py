@@ -110,12 +110,12 @@ class Log4jDate(GeneralDirective):
     }
 
     BUILTIN = {
-        'ABSOLUTE': ('%H:%M:%S,%f',
-                     r'(\d{2}:\d{2}:\d{2},\d{3})'),
-        'DATE': ('%d %b %Y %H:%M:%S,%f',
-                 r'(\d{1,2} \w{3} \d{4} \d{2}:\d{2}:\d{2},\d{3})'),
-        'ISO8601': ('%Y-%m-%d %H:%M:%S,%f',
-                    r'(\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2},\d{3})')
+        'ABSOLUTE': ('%H:%M:%S.%f',
+                     r'(\d{2}:\d{2}:\d{2}.\d{3})'),
+        'DATE': ('%d %b %Y %H:%M:%S.%f',
+                 r'(\d{1,2} \w{3} \d{4} \d{2}:\d{2}:\d{2}.\d{3})'),
+        'ISO8601': ('%Y-%m-%d %H:%M:%S.%f',
+                    r'(\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2}.\d{3})')
     }
 
     @classmethod
@@ -226,6 +226,15 @@ class Log4jCallerPosition(GeneralDirective):
 class Log4jCallerLineNumber(GeneralDirective):
     DIRECTIVE = 'L'
     KEY = 'caller.lineno'
+    NEED_BUILD = True
+
+    @classmethod
+    def regexp(cls, prefix: str, suffix: str) -> str:
+        return r'(\d+1)'
+
+    @classmethod
+    def build(cls, segment: str, *args):
+        return int(segment)
 
 
 class Log4jMessage(GeneralDirective):
@@ -241,6 +250,10 @@ class Log4jCallerMethodName(GeneralDirective):
     DIRECTIVE = 'M'
     KEY = 'caller.method'
 
+    @classmethod
+    def regexp(cls, prefix: str, suffix: str) -> str:
+        return r'(\w[\d\w\._]+)'
+
 
 class Log4jLogLevel(GeneralDirective):
     DIRECTIVE = 'p'
@@ -254,15 +267,24 @@ class Log4jLogLevel(GeneralDirective):
 class Log4jRuntimeMillisecond(GeneralDirective):
     DIRECTIVE = 'r'
     KEY = 'runtime'
+    NEED_BUILD = True
 
     @classmethod
     def regexp(cls, prefix: str, suffix: str) -> str:
         return '(\d+)'
 
+    @classmethod
+    def build(cls, segment: str, *args):
+        return int(segment)
+
 
 class Log4jCallerThreadName(GeneralDirective):
     DIRECTIVE = 't'
     KEY = 'caller.thread'
+
+    @classmethod
+    def regexp(cls, prefix: str, suffix: str) -> str:
+        return r'(\w[\d\w\._]+)'
 
 
 class Log4jNDC(GeneralDirective):
