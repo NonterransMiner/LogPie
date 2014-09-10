@@ -4,9 +4,9 @@ This module makes the reader.
 """
 import sys
 import os
-import importlib
 import time
 import shutil
+from .pattern import ROUTER as S_ROUTER
 
 READER_TPL = '''
 import sys
@@ -71,7 +71,7 @@ def write_code(src_path: str, pie_root: str, s: str, regexp: str, triads: list):
 
 def make_reader(s, pattern) -> str:
     # get absolute root of package reader
-    generate_abp = os.path.abspath(sys.argv[0])
+    generate_abp = os.path.abspath(__file__)
     reader_root = os.path.split(generate_abp)[0]
     gen_root = reader_root + '/gen'
     pie_root = os.path.split(reader_root)[0]
@@ -79,9 +79,8 @@ def make_reader(s, pattern) -> str:
     if not os.path.exists(gen_root):
         os.mkdir(gen_root)
         shutil.copy(reader_root + '/__init__.py', gen_root + '/__init__.py')
-    # dynamic import the given pattern module
-    importlib.import_module('pattern')
-    pm = importlib.import_module('.' + s.lower(), 'pattern')
+    # chose the given pattern module
+    pm = S_ROUTER[s]
     # print(pm, hasattr(pm, 'parser'), dir(pm))
     if not hasattr(pm, 'parser'):
         raise RuntimeError('{} is not a available pattern parser.'.format(s))
