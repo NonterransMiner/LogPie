@@ -1,0 +1,6 @@
+{
+    "gen-reader-with": "Python",
+    "src-path": "./",
+    "logsys": "log4j",
+    "pattern": "%d{ABSOLUTE} [%t] %p %M - %m"
+}
