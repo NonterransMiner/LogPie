@@ -5,6 +5,7 @@ The main interface of LogPie
 
 import json
 import logging
+import subprocess
 from reader.generate import make_reader
 
 CONFIGURATION = 'logpie.json'
@@ -45,7 +46,12 @@ def main():
     logger.info("BUILDING READER")
     logsys = configure['logsys']
     pattern = configure['pattern']
-    make_reader(logsys, pattern)
+    path = make_reader(logsys, pattern)
+    runnable = configure['python-runnable']
+    # use reader
+    s, ret = subprocess.getstatusoutput(' '.join([runnable, path]))
+    print(s, ret)
+    # further not implemented
 
 
 if __name__ == '__main__':

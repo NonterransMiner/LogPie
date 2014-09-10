@@ -1,4 +1,5 @@
 {
+    "python-runnable": "python3",
     "gen-reader-with": "Python",
     "src-path": "./",
     "logsys": "log4j",
