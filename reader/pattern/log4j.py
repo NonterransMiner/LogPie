@@ -83,9 +83,10 @@ def read_present(current_char: str, status: ParserStatus):
 
 def clean(status: ParserStatus):
     if status.string_buffer:
-        return status.pop_string()
+        return status.pop_string(), ()
     if status.nearby_key:
-        return make_directive(*status.pop_3())
+        t, a = make_directive(*status.pop_3())
+        return t, a
 
 
 # ############### Classes to handle the directives ################

@@ -35,9 +35,11 @@ def read_present(c: str, status: ParserStatus):
         return (regexp, triad), read
 
 
-def clean(status: ParserStatus) -> str:
+def clean(status: ParserStatus):
     if status.string_buffer:
-        return status.pop_string()
+        return status.pop_string(), None
+    else:
+        return None, None
 
 
 # ############### Classes to handle the directives ################
