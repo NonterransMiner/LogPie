@@ -3,9 +3,14 @@
 The main interface of LogPie
 """
 
+import os
 import json
 import logging
 import subprocess
+import sys
+
+import reader.gen
+
 from reader.generate import make_reader
 
 CONFIGURATION = 'logpie.json'
@@ -48,9 +53,13 @@ def main():
     pattern = configure['pattern']
     path = make_reader(logsys, pattern)
     runnable = configure['python-runnable']
+    logfile = configure['logfile']
     # use reader
-    s, ret = subprocess.getstatusoutput(' '.join([runnable, path]))
-    print(s, ret)
+    gen_folder, gen_name = os.path.split(path)
+    sys.path.append(gen_folder)
+    gen_module = __import__(gen_name[:-3])
+    val = gen_module.main(logfile)
+    print(len(val))
     # further not implemented
 
 

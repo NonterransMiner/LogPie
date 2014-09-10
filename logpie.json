@@ -2,6 +2,7 @@
     "python-runnable": "python3",
     "gen-reader-with": "Python",
     "src-path": "./",
-    "logsys": "log4j",
-    "pattern": "%d{ABSOLUTE} [%t] %p %M - %m"
+    "logfile": "arch.log",
+    "logsys": "systemd",
+    "pattern": "%d %h %s: %m"
 }
