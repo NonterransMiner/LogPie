@@ -69,7 +69,7 @@ def write_code(src_path: str, pie_root: str, s: str, regexp: str, triads: list):
         src_file.writelines(src)
 
 
-def make_reader(s, pattern):
+def make_reader(s, pattern) -> str:
     # get absolute root of package reader
     generate_abp = os.path.abspath(sys.argv[0])
     reader_root = os.path.split(generate_abp)[0]
@@ -93,7 +93,7 @@ def make_reader(s, pattern):
         filepath = gen_filepath(s, gen_root)
         # at last then write in generated new code
         write_code(filepath, pie_root, s, regexp, build_triads)
-        # print(regexp, '\n', build_triads)
+        return filepath
 
 
 def main():
