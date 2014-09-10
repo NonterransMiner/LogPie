@@ -17,6 +17,7 @@ sys.path.append(\'{pie_root}\')
 
 from reader.generic import GeneralReader
 
+
 class {s}LogReader(GeneralReader):
     def __init__(self, lines):
         super().__init__(lines)
@@ -24,15 +25,15 @@ class {s}LogReader(GeneralReader):
         self.triads = {triads}
 
 
-def main():
-    if len(sys.argv) == 2:
-        reader = {s}LogReader(sys.argv[1])
-        reader.readall()
-    else:
-        print("Usage:", '\\n', '$ python {fn} logfile')
+def main(path):
+    reader = {s}LogReader(path)
+    return reader.readall()
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) == 2:
+        main(sys.argv[1])
+    else:
+        print("Usage:", '\\n', '$ python {fn} logfile')
 '''
 
 
