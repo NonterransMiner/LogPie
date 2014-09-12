@@ -19,7 +19,8 @@ DEFAULT_PATTERN = r''
 ROUTER = {}
 
 
-def read(c: str, status: ParserStatus):
+def read(c: str, status: ParserStatus,
+         named=True, lang=None):
     if c == '%':
         return status.pop_string(), read_present
     else:
@@ -27,15 +28,17 @@ def read(c: str, status: ParserStatus):
         return None, read
 
 
-def read_present(c: str, status: ParserStatus):
+def read_present(c: str, status: ParserStatus,
+                 named=True, lang=None):
     if c in ROUTER:
         cls = ROUTER[c]
-        regexp = cls.regexp(None, None)
+        regexp = cls.regexp(None, None, named=named, lang=lang)
         triad = (cls.KEY, cls, cls.additional_info(None, None))
         return (regexp, triad), read
 
 
-def clean(status: ParserStatus):
+def clean(status: ParserStatus,
+          named=True, lang=None):
     if status.string_buffer:
         return status.pop_string(), None
     else:
@@ -50,9 +53,9 @@ class SystemdDate(GeneralDirective):
     KEY = 'datetime'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str):
-        # return r'([Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec] \d{2} \d{2}:\d{2}:\d{2})'
-        return r'([A-Za-z]{3} \d{2} \d{2}:\d{2}:\d{2})'
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r'[A-Za-z]{3} \d{2} \d{2}:\d{2}:\d{2}'
 
     @classmethod
     def additional_info(cls, prefix: str, suffix: str):
@@ -69,8 +72,9 @@ class SystemdHostname(GeneralDirective):
     KEY = 'hostname'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return r'(\w+)'
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r'\w+'
 
 
 class SystemdSource(GeneralDirective):
@@ -79,8 +83,9 @@ class SystemdSource(GeneralDirective):
     KEY = 'source'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return r'([\.\-\w\[\]]+)'
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r'[\.\-\w\[\]]+'
 
     @classmethod
     def build(cls, segment: str, *args) -> {'pname': str, 'pid': int}:
@@ -98,8 +103,9 @@ class SystemdMessage(GeneralDirective):
     KEY = 'message'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return r'(.*)'
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r'.*'
 
 
 # ############### MAKE ROUTER ################

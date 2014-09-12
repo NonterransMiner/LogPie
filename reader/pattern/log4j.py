@@ -21,14 +21,15 @@ DEFAULT_DATE_PATTERN = ''
 # ############### Functions to complete the pattern reader ################
 
 
-def make_directive(prefix: str, directive: str, suffix: str):
+def make_directive(prefix: str, directive: str, suffix: str,
+                   named=True, lang=None):
     cls = ROUTER.get(directive, None)
     if not cls:
         raise ValueError(
             'Pattern %{}{}{} does not exists or not implemented yet.'
             .format(prefix, directive, suffix))
     else:
-        regexp_piece = cls.regexp(prefix, suffix)
+        regexp_piece = cls.regexp(prefix, suffix, named=named, lang=lang)
         if cls.NEED_BUILD:
             build_triad = (cls.KEY, cls,
                            cls.additional_info(prefix, suffix))
@@ -37,7 +38,8 @@ def make_directive(prefix: str, directive: str, suffix: str):
     return regexp_piece, build_triad
 
 
-def read(current_char: str, status: ParserStatus):
+def read(current_char: str, status: ParserStatus,
+         named=True, lang=None):
     if current_char == '%':
         return status.pop_string(), read_present
     else:
@@ -45,12 +47,14 @@ def read(current_char: str, status: ParserStatus):
         return None, read
 
 
-def read_pending(current_char: str, status: ParserStatus):
+def read_pending(current_char: str, status: ParserStatus,
+                 named=True, lang=None):
     if current_char == '{':
         return None, read_braces
     else:
-        re_piece, build_triad = make_directive(*status.pop_3())
-        retval, next_func = read(current_char, status)
+        re_piece, build_triad = make_directive(*status.pop_3(), named=named,
+                                               lang=lang)
+        retval, next_func = read(current_char, status, named=named, lang=lang)
         if isinstance(retval, str):
             return (re_piece + retval, build_triad), next_func
         if retval is None:
@@ -60,15 +64,18 @@ def read_pending(current_char: str, status: ParserStatus):
                             .format(retval, type(retval)))
 
 
-def read_braces(current_char: str, status: ParserStatus):
+def read_braces(current_char: str, status: ParserStatus,
+                named=True, lang=None):
     if current_char == '}':
-        return make_directive(*status.pop_3()), read
+        t, a = make_directive(*status.pop_3(), named=named, lang=lang), read
+        return t, a
     else:
         status.push_suffix(current_char)
         return None, read_braces
 
 
-def read_present(current_char: str, status: ParserStatus):
+def read_present(current_char: str, status: ParserStatus,
+                 named=True, lang=None):
     if current_char == '%':
         return '%', read
     elif current_char in ROUTER:
@@ -81,11 +88,11 @@ def read_present(current_char: str, status: ParserStatus):
                           .format(current_char))
 
 
-def clean(status: ParserStatus):
+def clean(status: ParserStatus, named=True, lang=None):
     if status.string_buffer:
         return status.pop_string(), ()
     if status.nearby_key:
-        t, a = make_directive(*status.pop_3())
+        t, a = make_directive(*status.pop_3(), named=named, lang=lang)
         return t, a
 
 
@@ -112,15 +119,15 @@ class Log4jDate(GeneralDirective):
 
     BUILTIN = {
         'ABSOLUTE': ('%H:%M:%S.%f',
-                     r'(\d{2}:\d{2}:\d{2}.\d{3})'),
+                     r'\d{2}:\d{2}:\d{2}.\d{3}'),
         'DATE': ('%d %b %Y %H:%M:%S.%f',
-                 r'(\d{1,2} \w{3} \d{4} \d{2}:\d{2}:\d{2}.\d{3})'),
+                 r'\d{1,2} \w{3} \d{4} \d{2}:\d{2}:\d{2}.\d{3}'),
         'ISO8601': ('%Y-%m-%d %H:%M:%S.%f',
-                    r'(\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2}.\d{3})')
+                    r'\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2}.\d{3}')
     }
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
+    def gen_regexp(cls, prefix: str, suffix: str, named=True, lang=None) -> str:
         if prefix:
             raise SyntaxError(
                 'Cannot parse %{}d{{{}}}: no prefixing options excepted'
@@ -193,8 +200,9 @@ class Log4jLoggerNamespace(GeneralDirective):
     KEY = 'logger.namespace'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return r"([.\w]+)"
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r"[.\w]+"
 
 
 class Log4jLoggerClassName(GeneralDirective):
@@ -202,8 +210,9 @@ class Log4jLoggerClassName(GeneralDirective):
     KEY = 'logger.class'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return r"([.\w]+)"
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r"[.\w]+"
 
 
 class Log4jSourceFile(GeneralDirective):
@@ -211,8 +220,9 @@ class Log4jSourceFile(GeneralDirective):
     KEY = 'source.file'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return r'(\w[\w.]+\.java)'
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r'\w[\w.]+\.java'
 
 
 class Log4jCallerPosition(GeneralDirective):
@@ -220,8 +230,9 @@ class Log4jCallerPosition(GeneralDirective):
     KEY = 'caller.position'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return r'(\d+)'
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r'\d+'
 
 
 class Log4jCallerLineNumber(GeneralDirective):
@@ -230,8 +241,9 @@ class Log4jCallerLineNumber(GeneralDirective):
     NEED_BUILD = True
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return r'(\d+1)'
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r'\d+1'
 
     @classmethod
     def build(cls, segment: str, *args):
@@ -243,8 +255,9 @@ class Log4jMessage(GeneralDirective):
     KEY = 'message'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return r'(.*)'
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r'.*'
 
 
 class Log4jCallerMethodName(GeneralDirective):
@@ -252,8 +265,9 @@ class Log4jCallerMethodName(GeneralDirective):
     KEY = 'caller.method'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return r'(\w[\d\w\._]+)'
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r'\w[\d\w\._]+'
 
 
 class Log4jLogLevel(GeneralDirective):
@@ -261,8 +275,9 @@ class Log4jLogLevel(GeneralDirective):
     KEY = 'level'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return "(DEBUG|INFO|WARN|ERROR|FATAL)"
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return "DEBUG|INFO|WARN|ERROR|FATAL"
 
 
 class Log4jRuntimeMillisecond(GeneralDirective):
@@ -271,8 +286,9 @@ class Log4jRuntimeMillisecond(GeneralDirective):
     NEED_BUILD = True
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return '(\d+)'
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return '\d+'
 
     @classmethod
     def build(cls, segment: str, *args):
@@ -284,8 +300,9 @@ class Log4jCallerThreadName(GeneralDirective):
     KEY = 'caller.thread'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
-        return r'(\w[\d\w\._]+)'
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        return r'\w[\d\w\._]+'
 
 
 class Log4jNDC(GeneralDirective):

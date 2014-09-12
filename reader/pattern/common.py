@@ -3,6 +3,10 @@
 This module provides common components to construct the pattern parser
 """
 
+# # Constants
+
+ELIXIR = 'Elixir'
+
 
 class ParserStatus(object):
     def __init__(self):
@@ -60,9 +64,30 @@ class GeneralDirective:
     KEY = 'GENERAL'
 
     @classmethod
-    def regexp(cls, prefix: str, suffix: str) -> str:
+    def regexp(cls, prefix: str, suffix: str, named=False, lang=None) -> str:
         """
         Generate a regexp to capture this segment from the log line.
+        if `named` is True, this function will return a regexp using
+        name group.
+        if `lang` is None for Python, or, which is still planning, 'Elixir'
+        This function is just a wrapper, it calls the gen_regexp to make
+        the pattern and format it as `named` and `lang` says.
+        """
+        basic_re = cls.gen_regexp(prefix, suffix, named, lang)
+        if not named:
+            return '({})'.format(basic_re)
+        else:
+            if lang is None:
+                return '(?P<{}>{})'.format(cls.KEY, basic_re)
+            elif lang == ELIXIR:
+                return '(?<{}>{})'.format(cls.KEY, basic_re)
+
+
+    @classmethod
+    def gen_regexp(cls, prefix: str, suffix: str, named=False,
+                   lang=None) -> str:
+        """
+        This function will generate the real `pattern` for the given directive
         """
         pass
 
@@ -85,14 +110,17 @@ class GeneralDirective:
 
 def gen_pattern_parser(start_function: callable,
                        cleanup_function: callable,
-                       regexp_only: bool=False):
+                       regexp_only: bool=False,
+                       named=True,
+                       lang=None):
     def pattern_parser(pattern: str):
         status = ParserStatus()
         re_pieces = []
         build_triads = []
         function = start_function
         for current_char in pattern:
-            retval, function = function(current_char, status)
+            retval, function = function(current_char, status,
+                                        named=named, lang=lang)
             if isinstance(retval, str):
                 re_pieces.append(retval)
             elif isinstance(retval, tuple) and len(retval) == 2:
@@ -104,7 +132,8 @@ def gen_pattern_parser(start_function: callable,
             else:
                 raise TypeError('Unexpected type during parsing: {} as {}'
                                 .format(str(retval), type(retval)))
-        remaining_reg, remaining_tri = cleanup_function(status)
+        remaining_reg, remaining_tri = cleanup_function(status,
+                                                        named=named, lang=lang)
         if remaining_reg:
             re_pieces.append(remaining_reg)
         if remaining_tri:

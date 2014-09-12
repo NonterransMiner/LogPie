@@ -24,9 +24,11 @@ class GeneralReader(object):
         # override these fields to custom the behavior of reader
         # the regexp to capture segments in a single-line
         self.regexp = r''
+        self.using_named_capture = False
         # a list of triads with a key, a class like Log4jDate
         # and a tuple of addition information to call cls.build
         self.triads = []
+        self.triads_dict = dict()
         # cache compiled re if using iterable accessing
         self.compiled_re = None
         # reader behavior flags
@@ -99,16 +101,20 @@ class GeneralReader(object):
         else:
             raise StopIteration
 
-    def process_matches(self, matches):
-        for match in matches:
-            log_item = dict()
+    def process_matches(self, match):
+        log_item = dict()
+        if not self.using_named_capture:
             mixup = zip(self.triads, match)
             for (key, cls, addition), segment in mixup:
                 if cls.NEED_BUILD:
                     log_item[key] = cls.build(segment, *addition)
                 else:
                     log_item[key] = segment
-            self.cache.append(log_item)
+        else:
+            match = match.groupdict()
+            for key, (cls, addition) in self.triads_dict.items():
+                log_item[key] = cls.build(match[key], *addition)
+        self.cache.append(log_item)
 
     def readall(self):
         """
@@ -122,9 +128,9 @@ class GeneralReader(object):
                 line = self.next_line()
             except StopIteration:
                 break
-            matches = compiled_re.findall(line)
-            if matches:
-                self.process_matches(matches)
+            match = compiled_re.match(line)
+            if match:
+                self.process_matches(match)
             else:
                 if self.tolerant:
                     continue

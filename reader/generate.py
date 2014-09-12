@@ -23,6 +23,8 @@ class {s}LogReader(GeneralReader):
         super().__init__(lines)
         self.regexp = {regexp}
         self.triads = {triads}
+        self.triads_dict = {{key: (cls, arg) for key, cls, arg in self.triads}}
+        self.using_named_capture = {unc}
 
 
 def main(path):
@@ -54,7 +56,8 @@ def triad_to_string(triad, indent: int=3):
     return ts
 
 
-def write_code(src_path: str, pie_root: str, s: str, regexp: str, triads: list):
+def write_code(src_path: str, pie_root: str, s: str, regexp: str, triads: list,
+               unc=True):
     class_names = map(lambda triad: triad[1].__name__, triads)
     src_filename = os.path.split(src_path)[1]
     readable_triad = "[\n{}]".format(', \n'.join(map(triad_to_string, triads)))
@@ -65,7 +68,8 @@ def write_code(src_path: str, pie_root: str, s: str, regexp: str, triads: list):
     # format the class
     src = READER_TPL.format(s=s.title(), fn=src_filename, pie_root=pie_root,
                             regexp=repr(regexp), triads=readable_triad,
-                            directive_import='\n'.join(imports))
+                            directive_import='\n'.join(imports),
+                            unc=str(unc))
     with open(src_path, 'a') as src_file:
         src_file.writelines(src)
 
