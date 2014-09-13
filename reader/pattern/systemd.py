@@ -7,6 +7,7 @@ instant, this more likely a MODULE TO TEST THE READER.
 """
 
 import datetime
+import multiprocessing
 import re
 
 from .common import ParserStatus, GeneralDirective
@@ -51,6 +52,8 @@ class SystemdDate(GeneralDirective):
     DIRECTIVE = 'd'
     NEED_BUILD = True
     KEY = 'datetime'
+    MON_NAMES = {'Jan': 1, 'Feb': 2, 'Mar': 3, "Apr": 4, 'May': 5, 'Jun': 6,
+                 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
 
     @classmethod
     def gen_regexp(cls, prefix: str, suffix: str, named=False,
@@ -63,7 +66,11 @@ class SystemdDate(GeneralDirective):
 
     @classmethod
     def build(cls, segment: str, format_str: str) -> datetime.datetime:
-        return datetime.datetime.strptime(segment, format_str)
+        mon, day, c = segment.split()
+        mon = cls.MON_NAMES[mon]
+        hour, minutes, s = c.split(':')
+        return datetime.datetime(2014, mon, int(day),
+                                 int(hour), int(minutes), int(s))
 
 
 class SystemdHostname(GeneralDirective):
@@ -89,12 +96,12 @@ class SystemdSource(GeneralDirective):
 
     @classmethod
     def build(cls, segment: str, *args) -> {'pname': str, 'pid': int}:
-        match = re.match('(\S+)\[(\d+)\]', segment)
-        if match:
-            pname, pid = match.groups()
-            return {'pname': pname, 'pid': int(pid)}
-        else:
+        sep_index = segment.rfind('[')
+        pname = segment[:sep_index]
+        if sep_index == -1:
             return {'pname': segment, 'pid': -1}
+        else:
+            return {'pname': pname, 'pid': int(segment[sep_index + 1:-1])}
 
 
 class SystemdMessage(GeneralDirective):

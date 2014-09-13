@@ -102,19 +102,21 @@ class GeneralReader(object):
             raise StopIteration
 
     def process_matches(self, match):
-        log_item = dict()
-        if not self.using_named_capture:
+        if self.using_named_capture:
+            matchd = match.groupdict()
+            for key in self.triads_dict:
+                cls, addition = self.triads_dict[key]
+                matchd[key] = cls.build(matchd[key], *addition)
+            self.cache.append(match)
+        else:
+            log_item = dict()
             mixup = zip(self.triads, match)
             for (key, cls, addition), segment in mixup:
                 if cls.NEED_BUILD:
                     log_item[key] = cls.build(segment, *addition)
                 else:
                     log_item[key] = segment
-        else:
-            match = match.groupdict()
-            for key, (cls, addition) in self.triads_dict.items():
-                log_item[key] = cls.build(match[key], *addition)
-        self.cache.append(log_item)
+            self.cache.append(log_item)
 
     def readall(self):
         """
